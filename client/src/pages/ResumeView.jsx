@@ -5,6 +5,7 @@ import { useParams } from "react-router-dom";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
+import { shortenText } from "./Dashboard";
 
 function ResumeView() {
   const { resumeId } = useParams();
@@ -120,7 +121,7 @@ function ResumeView() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex items-center space-x-4">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-900 text-wrap">
                   {resume.user.name}
                 </h1>
                 <div className="flex items-center space-x-4  text-sm text-gray-600 mt-5">

@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { CiEdit } from "react-icons/ci";
 import { Link } from "react-router-dom";
+import { IoClose } from "react-icons/io5";
 
 function Dashboard() {
   const [resumes, setResumes] = useState([]);
   const [filteredResumes, setFilteredResumes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isEditResume, setisEditResume] = useState("");
   const [sortBy, setSortBy] = useState("date");
 
   useEffect(() => {
@@ -75,6 +78,32 @@ function Dashboard() {
     }
   };
 
+  const updateResume = async (resumeId, updates) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/auth/resumes/${resumeId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setResumes(
+          resumes.map((resume) =>
+            resume._id === resumeId ? data.resume : resume
+          )
+        );
+        setisEditResume("");
+      }
+    } catch (error) {
+      console.error("Error updating resume:", error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -128,7 +157,10 @@ function Dashboard() {
               <option value="name">Sort by Name</option>
               <option value="views">Sort by Views</option>
             </select>
-            <Link to="/upload" className="btn-primary flex items-center whitespace-nowrap">
+            <Link
+              to="/upload"
+              className="btn-primary flex items-center whitespace-nowrap"
+            >
               <svg
                 className="w-5 h-5 mr-2"
                 fill="none"
@@ -190,28 +222,68 @@ function Dashboard() {
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate">
-                    {resume.name}
-                  </h3>
+                  <div>
+                    {isEditResume === resume._id ? (
+                      <>
+                        <input
+                          defaultValue={resume.name}
+                          className="input-field mb-1"
+                          type="text"
+                          id={`resume-name-${resume._id}`}
+                        />
+                        <div className=" flex items-center justify-between">
+                          <button
+                            onClick={() => {
+                              const name = document.getElementById(
+                                `resume-name-${resume._id}`
+                              ).value;
+                              updateResume(resume._id, { name });
+                            }}
+                            className="btn-success mb-1 text-sm"
+                          >
+                            Save
+                          </button>
+                          <span
+                            className=" cursor-pointer hover:bg-gray-100 p-1"
+                            onClick={() => setisEditResume("")}
+                          >
+                            <IoClose className=" scale-125" />
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <h3 className="text-lg flex items-center gap-2 font-semibold text-gray-900 mb-1 truncate">
+                        {shortenText(resume.name, 20)}
+                        <span
+                          onClick={() => setisEditResume(resume._id)}
+                          className=" cursor-pointer hover:bg-gray-100 p-1"
+                        >
+                          <CiEdit />
+                        </span>
+                      </h3>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-500">
                     {new Date(resume.createdAt).toLocaleDateString()}
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg
-                    className="w-5 h-5 text-blue-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                </div>
+                {isEditResume !== resume._id && (
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg
+                      className="w-5 h-5 text-blue-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                  </div>
+                )}
               </div>
 
               {/* <div className="grid grid-cols-3 gap-4 mb-6">
@@ -278,3 +350,7 @@ function Dashboard() {
 }
 
 export default Dashboard;
+
+export function shortenText(text, number = 15) {
+  return text.length > number ? text.slice(0, number) + "..." : text;
+}

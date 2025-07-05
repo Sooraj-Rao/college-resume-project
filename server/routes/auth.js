@@ -161,4 +161,23 @@ router.delete("/delete-account", authenticateToken, async (req, res) => {
   }
 });
 
+router.put("/resumes/:id", authenticateToken, async (req, res) => {
+  try {
+    const { name } = req.body
+
+    const resume = await Resume.findByIdAndUpdate(req.params.id, { name }, { new: true }).populate("user", "name email")
+
+    if (!resume) {
+      return res.status(404).json({
+        success: false,
+        message: "Resume not found",
+      })
+    }
+
+    res.json({ success: true, resume })
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error" })
+  }
+})
+
 export default router;

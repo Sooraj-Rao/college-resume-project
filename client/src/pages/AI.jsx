@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import jsPDF from "jspdf";
+import { shortenText } from "../pages/Dashboard";
 
 function AI() {
   const [resumes, setResumes] = useState([]);
@@ -91,7 +92,7 @@ function AI() {
   };
 
   const exampleQueries = [
-    "Software Engineer at FAANG companies",
+    "Software Engineer at MNC companies",
     "Frontend Developer position",
     "Data Scientist role",
     "Marketing Manager job",
@@ -117,9 +118,6 @@ function AI() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             AI Resume Feedback
           </h1>
-          <p className="text-gray-600">
-            Get personalized feedback powered by artificial intelligence
-          </p>
         </div>
 
         <div className="space-y-6">
@@ -153,7 +151,7 @@ function AI() {
               <option value="">Choose a resume for analysis...</option>
               {resumes.map((resume) => (
                 <option key={resume._id} value={resume._id}>
-                  {resume.name}
+                  {shortenText(resume.name, 40)}
                 </option>
               ))}
             </select>
@@ -373,10 +371,9 @@ const HighlightedText = (text) => {
     ? cleanText.replace(scoreSection, "").trim()
     : cleanText;
 
-const sections = mainContent
-  .split(/(?=\n?\d+\.\s+\*\*[^*]+:\*\*)/)
-  .filter((section) => section.trim());
-
+  const sections = mainContent
+    .split(/(?=\n?\d+\.\s+\*\*[^*]+:\*\*)/)
+    .filter((section) => section.trim());
 
   return (
     <div className="space-y-6 text-gray-800 leading-relaxed">

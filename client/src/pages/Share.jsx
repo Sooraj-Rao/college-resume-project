@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { shortenText } from "../pages/Dashboard";
 
 function Share() {
   const [resumes, setResumes] = useState([]);
@@ -104,19 +105,21 @@ function Share() {
               <option value="">Choose a resume to share...</option>
               {resumes.map((resume) => (
                 <option key={resume._id} value={resume._id}>
-                  {resume.name}
+                  {shortenText(resume.name, 40)}
                 </option>
               ))}
             </select>
-            <a
-              href={`/api/resumes/${selectedResume}/download`}
-              className="flex-1   btn-primary text-center text-sm py-2"
-            >
-              Download
-            </a>
+            {selectedResume && (
+              <a
+                href={`/api/resumes/${selectedResume}/download`}
+                className="flex-1   btn-primary text-center text-sm py-2"
+              >
+                Download
+              </a>
+            )}
           </div>
 
-          {shareUrl && (
+          {selectedResume && shareUrl && (
             <>
               <div className="card">
                 <div className="flex items-center mb-4">

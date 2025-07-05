@@ -43,7 +43,7 @@ function AdminDashboard({ setAdminUser }) {
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     setAdminUser(false);
-    navigate("/admin");
+    window.location.href = "/admin";
   };
 
   const updateUser = async (userId, updates) => {

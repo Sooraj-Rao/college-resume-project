@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { shortenText } from "../pages/Dashboard";
 
 function Upload() {
   const [file, setFile] = useState(null);
@@ -154,10 +155,10 @@ function Upload() {
                   </div>
                   <div>
                     <p className="text-lg font-semibold text-gray-900">
-                      {file.name}
+                      {shortenText(file.name,35)}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {Math.round(file.size / 1024)}KB
+                      {Math.round(file.size / 1024)} KB
                     </p>
                   </div>
                 </div>
