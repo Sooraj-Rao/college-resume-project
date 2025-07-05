@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "build": "cd ../client && npm i && npm run build && cd ../server && npm start"
   },
   "dependencies": {
     "@google/generative-ai": "^0.2.1",
