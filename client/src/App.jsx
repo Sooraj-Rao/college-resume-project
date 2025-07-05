@@ -5,7 +5,6 @@ import {
   Routes,
   Route,
   Navigate,
-  Link,
 } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Home from "./pages/Home";
@@ -19,9 +18,12 @@ import Settings from "./pages/Settings";
 import ResumeView from "./pages/ResumeView";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function App() {
   const [user, setUser] = useState(null);
+  const [adminUser, setAdminUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,6 +48,24 @@ function App() {
     } else {
       setLoading(false);
     }
+
+    const adminToken = localStorage.getItem("adminToken");
+    if (adminToken) {
+      fetch("/api/admin/users", {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setAdminUser(true);
+          } else {
+            localStorage.removeItem("adminToken");
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem("adminToken");
+        });
+    }
   }, []);
 
   if (loading) {
@@ -58,11 +78,11 @@ function App() {
       </div>
     );
   }
-
+  
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
-        {user && !user?.isActive && (
+        {user && user?.isActive == false && (
           <div className="bg-yellow-100 text-yellow-800 p-4 rounded-md shadow-sm">
             <p className="font-medium">Account Disabled</p>
             <p>
@@ -109,6 +129,27 @@ function App() {
                 element={<Register setUser={setUser} />}
               />
               <Route path="/r/:resumeId" element={<ResumeView />} />
+              <Route
+                path="/admin"
+                element={
+                  adminUser ? (
+                    <Navigate to="/admin/dashboard" />
+                  ) : (
+                    <AdminLogin setAdminUser={setAdminUser} />
+                  )
+                }
+              />
+              <Route
+                path="/admin/dashboard"
+                element={
+                  adminUser ? (
+                    <AdminDashboard setAdminUser={setAdminUser} />
+                  ) : (
+                    <Navigate to="/admin" />
+                  )
+                }
+              />
+
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </>

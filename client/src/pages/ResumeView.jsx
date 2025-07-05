@@ -23,7 +23,6 @@ function ResumeView() {
 
       if (data.success) {
         setResume(data.resume);
-        // Track view
         trackAction("view");
       } else {
         setError(data.message);

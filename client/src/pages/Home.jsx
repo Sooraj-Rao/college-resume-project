@@ -1,10 +1,16 @@
-import { Link } from "react-router-dom"
+import { Link } from "react-router-dom";
+import { Logo } from "../components/Navbar";
 
 function Home() {
   const features = [
     {
       icon: (
-        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="w-8 h-8 text-blue-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -14,11 +20,17 @@ function Home() {
         </svg>
       ),
       title: "Upload & Organize",
-      description: "Easily upload your PDF resumes and keep them organized with powerful search and filtering options.",
+      description:
+        "Easily upload your PDF resumes and keep them organized with powerful search and filtering options.",
     },
     {
       icon: (
-        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="w-8 h-8 text-blue-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -33,7 +45,12 @@ function Home() {
     },
     {
       icon: (
-        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="w-8 h-8 text-blue-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -46,7 +63,7 @@ function Home() {
       description:
         "Get personalized, actionable feedback on your resumes using advanced AI for specific job roles and industries.",
     },
-  ]
+  ];
 
   return (
     <div className="min-h-screen">
@@ -59,20 +76,25 @@ function Home() {
               <span className="text-blue-600 block">Professional Journey</span>
             </h1>
             <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed">
-              Upload, manage, share, and get AI-powered feedback on your resumes. Keep all your professional documents
-              organized in one beautiful, intuitive platform.
+              Upload, manage, share, and get AI-powered feedback on your
+              resumes. Keep all your professional documents organized in one
+              beautiful, intuitive platform.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link to="/register" className="btn-primary text-lg px-8 py-4 w-full sm:w-auto">
-                Get Started Free
+              <Link
+                to="/register"
+                className="btn-primary text-lg px-8 py-4 w-full sm:w-auto"
+              >
+                Get Started
               </Link>
-              <Link to="/login" className="btn-secondary text-lg px-8 py-4 w-full sm:w-auto">
+              <Link
+                to="/login"
+                className="btn-secondary text-lg px-8 py-4 w-full sm:w-auto"
+              >
                 Sign In
               </Link>
             </div>
-
-            <p className="text-sm text-gray-500 mt-4">No credit card required • Free forever</p>
           </div>
         </div>
       </div>
@@ -84,20 +106,28 @@ function Home() {
               Everything you need to manage your resumes
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Powerful features designed to streamline your job search and professional presentation.
+              Powerful features designed to streamline your job search and
+              professional presentation.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <div key={index} className="card text-center hover:shadow-md transition-shadow duration-300">
+              <div
+                key={index}
+                className="card text-center hover:shadow-md transition-shadow duration-300"
+              >
                 <div className="flex justify-center mb-4">
                   <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center">
                     {feature.icon}
                   </div>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  {feature.description}
+                </p>
               </div>
             ))}
           </div>
@@ -106,23 +136,45 @@ function Home() {
 
       <div className="bg-blue-600 py-16">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">Ready to organize your professional life?</h2>
-          <p className="text-xl text-blue-100 mb-8">
-            Join thousands of professionals who trust ResumeHub with their career documents.
-          </p>
+          <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">
+            Ready to organize your Resumes?
+          </h2>
+
           <Link
             to="/register"
             className="inline-flex items-center bg-white text-blue-600 font-semibold px-8 py-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
           >
-            Start Your Free Account
-            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            Create Your Account
+            <svg
+              className="w-5 h-5 ml-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 8l4 4m0 0l-4 4m4-4H3"
+              />
             </svg>
           </Link>
         </div>
       </div>
+      <footer className=" p-8  flex justify-between">
+        <Logo />
+        <p>
+          Developed by
+          <a
+            className=" ml-1 hover:underline"
+            href="https://soorajrao.in?ref=resumehub"
+          >
+            Sooraj Rao
+          </a>
+        </p>
+      </footer>
     </div>
-  )
+  );
 }
 
-export default Home
+export default Home;

@@ -88,12 +88,10 @@ function Dashboard() {
 
   return (
     <div className="p-6 lg:p-8">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
       </div>
 
-      {/* Controls */}
       <div className="card mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex-1">
@@ -150,7 +148,6 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Resumes Grid */}
       {filteredResumes.length === 0 ? (
         <div className="card text-center py-12">
           <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
