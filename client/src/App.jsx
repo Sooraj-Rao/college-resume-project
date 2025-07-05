@@ -5,6 +5,7 @@ import {
   Routes,
   Route,
   Navigate,
+  Link,
 } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Home from "./pages/Home";
@@ -17,6 +18,7 @@ import AI from "./pages/AI";
 import Settings from "./pages/Settings";
 import ResumeView from "./pages/ResumeView";
 import Navbar from "./components/Navbar";
+import Sidebar from "./components/Sidebar";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -25,7 +27,6 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      // Verify token with backend
       fetch("/api/auth/verify", {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -49,8 +50,11 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -58,53 +62,57 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
-        <Navbar user={user} setUser={setUser} />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route
-            path="/login"
-            element={
-              !user ? <Login setUser={setUser} /> : <Navigate to="/dashboard" />
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              !user ? (
-                <Register setUser={setUser} />
-              ) : (
-                <Navigate to="/dashboard" />
-              )
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={user ? <Dashboard /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/upload"
-            element={user ? <Upload /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/share"
-            element={user ? <Share /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/ai"
-            element={user ? <AI /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/settings"
-            element={
-              user ? (
-                <Settings user={user} setUser={setUser} />
-              ) : (
-                <Navigate to="/login" />
-              )
-            }
-          />
-          <Route path="/r/:resumeId" element={<ResumeView />} />
-        </Routes>
+        {user && !user?.isActive && (
+          <div className="bg-yellow-100 text-yellow-800 p-4 rounded-md shadow-sm">
+            <p className="font-medium">Account Disabled</p>
+            <p>
+              Your resumes are currently private. Please enable your account to
+              view them. Enable your account in
+              <a href="/settings#disable" className="ml-1 underline">
+                Settings
+              </a>
+            </p>
+          </div>
+        )}
+
+        {user ? (
+          <div className="flex h-screen">
+            <Sidebar user={user} setUser={setUser} />
+            <main className="flex-1 overflow-auto">
+              <Routes>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/upload" element={<Upload />} />
+                <Route path="/share" element={<Share />} />
+                <Route path="/ai" element={<AI />} />
+                <Route
+                  path="/settings"
+                  element={<Settings user={user} setUser={setUser} />}
+                />
+                <Route path="/" element={<Navigate to="/dashboard" />} />
+                <Route path="/login" element={<Navigate to="/dashboard" />} />
+                <Route
+                  path="/register"
+                  element={<Navigate to="/dashboard" />}
+                />
+                <Route path="/r/:resumeId" element={<ResumeView />} />
+              </Routes>
+            </main>
+          </div>
+        ) : (
+          <>
+            <Navbar />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login setUser={setUser} />} />
+              <Route
+                path="/register"
+                element={<Register setUser={setUser} />}
+              />
+              <Route path="/r/:resumeId" element={<ResumeView />} />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </>
+        )}
       </div>
     </Router>
   );

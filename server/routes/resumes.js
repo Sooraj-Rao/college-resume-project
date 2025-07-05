@@ -12,13 +12,11 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-// Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, "../public/resumes");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Multer configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
@@ -32,7 +30,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 250 * 1024, // 250KB
+    fileSize: 250 * 1024,
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype === "application/pdf") {
@@ -43,7 +41,6 @@ const upload = multer({
   },
 });
 
-// Get all resumes for authenticated user
 router.get("/", authenticateToken, async (req, res) => {
   try {
     const resumes = await Resume.find({ user: req.user._id })
@@ -56,7 +53,6 @@ router.get("/", authenticateToken, async (req, res) => {
   }
 });
 
-// Upload resume
 router.post(
   "/upload",
   authenticateToken,
@@ -90,7 +86,6 @@ router.post(
 
       res.status(201).json({ success: true, resume });
     } catch (error) {
-      // Clean up uploaded file if database save fails
       if (req.file) {
         const filePath = path.join(uploadsDir, req.file.filename);
         if (fs.existsSync(filePath)) {
@@ -102,7 +97,6 @@ router.post(
   }
 );
 
-// Delete resume
 router.delete("/:id", authenticateToken, async (req, res) => {
   try {
     const resume = await Resume.findOne({
@@ -116,7 +110,6 @@ router.delete("/:id", authenticateToken, async (req, res) => {
         .json({ success: false, message: "Resume not found" });
     }
 
-    // Delete file
     const filePath = path.join(uploadsDir, resume.filename);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
@@ -130,7 +123,6 @@ router.delete("/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// Generate short URL (placeholder - you can implement your own URL shortener)
 router.post("/short-url", authenticateToken, async (req, res) => {
   try {
     const { resumeId } = req.body;
@@ -142,7 +134,6 @@ router.post("/short-url", authenticateToken, async (req, res) => {
         .json({ success: false, message: "Resume not found" });
     }
 
-    // For now, just return the same URL (you can implement your own URL shortener)
     const shortUrl = `${req.protocol}://${req.get("host")}/r/${resume.shortId}`;
 
     res.json({ success: true, shortUrl });
@@ -151,7 +142,6 @@ router.post("/short-url", authenticateToken, async (req, res) => {
   }
 });
 
-// Get public resume by shortId
 router.get("/public/:shortId", async (req, res) => {
   try {
     const resume = await Resume.findOne({
@@ -171,7 +161,6 @@ router.get("/public/:shortId", async (req, res) => {
   }
 });
 
-// Serve public resume file
 router.get("/public/:shortId/file", async (req, res) => {
   try {
     const resume = await Resume.findOne({
@@ -197,7 +186,6 @@ router.get("/public/:shortId/file", async (req, res) => {
   }
 });
 
-// Download public resume
 router.get("/public/:shortId/download", async (req, res) => {
   try {
     const resume = await Resume.findOne({
@@ -223,7 +211,6 @@ router.get("/public/:shortId/download", async (req, res) => {
   }
 });
 
-// Track analytics
 router.post("/track/:shortId", async (req, res) => {
   try {
     const { action } = req.body;
@@ -246,7 +233,6 @@ router.post("/track/:shortId", async (req, res) => {
   }
 });
 
-// Download resume for authenticated user
 router.get("/:id/download", async (req, res) => {
   try {
     const resume = await Resume.findOne({ _id: req.params.id });

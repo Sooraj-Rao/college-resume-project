@@ -65,7 +65,6 @@ router.post("/feedback", authenticateToken, async (req, res) => {
 
 export default router;
 
-// Extract text from PDF using pdf2json
 function parsePdf(buffer) {
   return new Promise((resolve, reject) => {
     const pdfParser = new PDFParser();
@@ -84,7 +83,6 @@ function parsePdf(buffer) {
   });
 }
 
-// Prompt builder
 function createPrompt(resumeText, userQuery) {
   return `
 You are a resume expert. Below is the extracted text from a real resume. The user is applying for the role: "${userQuery}".
