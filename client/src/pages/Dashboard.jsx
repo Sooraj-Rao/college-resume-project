@@ -12,6 +12,8 @@ function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isEditResume, setisEditResume] = useState("");
   const [sortBy, setSortBy] = useState("date");
+  const [replacingResume, setReplacingResume] = useState("");
+  const [replaceFile, setReplaceFile] = useState(null);
 
   useEffect(() => {
     fetchResumes();
@@ -101,6 +103,81 @@ function Dashboard() {
       }
     } catch (error) {
       console.error("Error updating resume:", error);
+    }
+  };
+
+  const togglePrivacy = async (resumeId, currentStatus) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/resumes/${resumeId}/privacy`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isPublic: !currentStatus }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setResumes(
+          resumes.map((resume) =>
+            resume._id === resumeId ? data.resume : resume
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error updating privacy:", error);
+    }
+  };
+
+  const handleFileReplace = (resumeId, file) => {
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      alert("Please select a PDF file");
+      return;
+    }
+    if (file.size > 250 * 1024) {
+      alert("File size must be less than 250KB");
+      return;
+    }
+
+    setReplaceFile(file);
+    setReplacingResume(resumeId);
+  };
+
+  const replaceResumeFile = async () => {
+    if (!replaceFile || !replacingResume) return;
+
+    const formData = new FormData();
+    formData.append("resume", replaceFile);
+
+    try {
+      const response = await fetch(`/api/resumes/${replacingResume}/replace`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setResumes(
+          resumes.map((resume) =>
+            resume._id === replacingResume ? data.resume : resume
+          )
+        );
+        setReplacingResume("");
+        setReplaceFile(null);
+        alert("Resume file updated successfully!");
+      } else {
+        alert("Failed to update resume: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error replacing resume:", error);
+      alert("Error updating resume file");
     }
   };
 
@@ -239,9 +316,9 @@ function Dashboard() {
                               ).value;
                               updateResume(resume._id, { name });
                             }}
-                            className="btn-success mb-1 text-sm"
+                            className="btn-success scale-90 mb-1 text-sm"
                           >
-                            Save
+                            Update name
                           </button>
                           <span
                             className=" cursor-pointer hover:bg-gray-100 p-1"
@@ -264,8 +341,22 @@ function Dashboard() {
                     )}
                   </div>
                   <p className="text-sm text-gray-500">
+                    <span className=" mr-1">Created on</span>
                     {new Date(resume.createdAt).toLocaleDateString()}
                   </p>
+
+                  {/* Privacy Status */}
+                  <div className="flex items-center mt-2 space-x-2">
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        resume.isPublic
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {resume.isPublic ? "Public" : "Private"}
+                    </span>
+                  </div>
                 </div>
                 {isEditResume !== resume._id && (
                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -286,26 +377,49 @@ function Dashboard() {
                 )}
               </div>
 
-              {/* <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">
-                    {resume.analytics.views}
-                  </p>
-                  <p className="text-xs text-gray-500">Views</p>
+              {isEditResume === resume._id && (
+                <div className="mb-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">
+                      Visibilty
+                    </span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={resume.isPublic}
+                        onChange={() =>
+                          togglePrivacy(resume._id, resume.isPublic)
+                        }
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">
+                      Replace File
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) =>
+                          handleFileReplace(resume._id, e.target.files[0])
+                        }
+                        className="hidden"
+                        id={`file-${resume._id}`}
+                      />
+                      <label
+                        htmlFor={`file-${resume._id}`}
+                        className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded cursor-pointer transition-colors"
+                      >
+                        Choose File
+                      </label>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">
-                    {resume.analytics.downloads}
-                  </p>
-                  <p className="text-xs text-gray-500">Downloads</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">
-                    {resume.analytics.contacts}
-                  </p>
-                  <p className="text-xs text-gray-500">Contacts</p>
-                </div>
-              </div> */}
+              )}
 
               <div className="flex gap-2">
                 <a
@@ -343,6 +457,36 @@ function Dashboard() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      {replacingResume && replaceFile && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Replace Resume File
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to replace the current resume file with "
+              {replaceFile.name}"? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={replaceResumeFile}
+                className="btn-primary flex-1"
+              >
+                Replace File
+              </button>
+              <button
+                onClick={() => {
+                  setReplacingResume("");
+                  setReplaceFile(null);
+                }}
+                className="btn-secondary flex-1"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

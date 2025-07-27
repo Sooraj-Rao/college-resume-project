@@ -1,7 +1,7 @@
 {
   "name": "resume-organizer-server",
   "version": "1.0.0",
-  "description": "Resume Organizer Backend",
+  "description": "ResumeHub Backend",
   "main": "index.js",
   "type": "module",
   "scripts": {

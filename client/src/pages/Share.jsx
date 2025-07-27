@@ -246,30 +246,57 @@ function Share() {
                 {(() => {
                   const resume = resumes.find((r) => r._id === selectedResume);
                   return resume ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="text-center p-4 bg-blue-50 rounded-lg">
-                        <p className="text-3xl font-bold text-blue-600">
-                          {resume.analytics.views}
-                        </p>
-                        <p className="text-sm text-blue-700 font-medium">
-                          Total Views
-                        </p>
-                      </div>
-                      <div className="text-center p-4 bg-green-50 rounded-lg">
-                        <p className="text-3xl font-bold text-green-600">
-                          {resume.analytics.downloads}
-                        </p>
-                        <p className="text-sm text-green-700 font-medium">
-                          Downloads
-                        </p>
-                      </div>
-                      <div className="text-center p-4 bg-purple-50 rounded-lg">
-                        <p className="text-3xl font-bold text-purple-600">
-                          {resume.analytics.contacts}
-                        </p>
-                        <p className="text-sm text-purple-700 font-medium">
-                          Contact Clicks
-                        </p>
+                    <div className="space-y-4">
+                      {/* Privacy Status Alert */}
+                      {!resume.isPublic && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                          <div className="flex items-center">
+                            <svg
+                              className="w-5 h-5 text-yellow-600 mr-2"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                              />
+                            </svg>
+                            <p className="text-yellow-800 font-medium">
+                              This resume is set to private and cannot be
+                              accessed via shared links.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="text-center p-4 bg-blue-50 rounded-lg">
+                          <p className="text-3xl font-bold text-blue-600">
+                            {resume.analytics.views}
+                          </p>
+                          <p className="text-sm text-blue-700 font-medium">
+                            Total Views
+                          </p>
+                        </div>
+                        <div className="text-center p-4 bg-green-50 rounded-lg">
+                          <p className="text-3xl font-bold text-green-600">
+                            {resume.analytics.downloads}
+                          </p>
+                          <p className="text-sm text-green-700 font-medium">
+                            Downloads
+                          </p>
+                        </div>
+                        <div className="text-center p-4 bg-purple-50 rounded-lg">
+                          <p className="text-3xl font-bold text-purple-600">
+                            {resume.analytics.contacts}
+                          </p>
+                          <p className="text-sm text-purple-700 font-medium">
+                            Contact Clicks
+                          </p>
+                        </div>
                       </div>
                     </div>
                   ) : null;

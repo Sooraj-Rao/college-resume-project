@@ -87,7 +87,7 @@ function Register({ setUser }) {
               Create your account
             </h2>
             <p className="mt-2 text-gray-600">
-              Start your professional journey with ResumeHub
+              Start your professional journey
             </p>
           </div>
 

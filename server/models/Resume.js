@@ -1,4 +1,4 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
 
 const resumeSchema = new mongoose.Schema(
   {
@@ -25,6 +25,10 @@ const resumeSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    isPublic: {
+      type: Boolean,
+      default: true,
+    },
     analytics: {
       views: {
         type: Number,
@@ -42,7 +46,7 @@ const resumeSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
-)
+  }
+);
 
-export default mongoose.model("Resume", resumeSchema)
+export default mongoose.model("Resume", resumeSchema);

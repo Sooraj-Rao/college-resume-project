@@ -148,10 +148,11 @@ router.get("/public/:shortId", async (req, res) => {
       shortId: req.params.shortId,
     }).populate("user", "name email isActive");
 
-    if (!resume || !resume.user.isActive) {
+    if (!resume || !resume.user.isActive || !resume.isPublic) {
       return res.status(404).json({
         success: false,
-        message: "Resume not found or user account is disabled",
+        message:
+          "Resume not found, user account is disabled, or resume is private",
       });
     }
 
@@ -167,17 +168,19 @@ router.get("/public/:shortId/file", async (req, res) => {
       shortId: req.params.shortId,
     }).populate("user", "isActive");
 
-    if (!resume || !resume.user.isActive) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Resume not found" });
+    if (!resume || !resume.user.isActive || !resume.isPublic) {
+      return res.status(404).json({
+        success: false,
+        message: "Resume not found or not accessible",
+      });
     }
 
     const filePath = path.join(uploadsDir, resume.filename);
     if (!fs.existsSync(filePath)) {
-      return res
-        .status(404)
-        .json({ success: false, message: "File not found" });
+      return res.status(404).json({
+        success: false,
+        message: "File not found",
+      });
     }
 
     res.sendFile(filePath);
@@ -192,17 +195,19 @@ router.get("/public/:shortId/download", async (req, res) => {
       shortId: req.params.shortId,
     }).populate("user", "isActive");
 
-    if (!resume || !resume.user.isActive) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Resume not found" });
+    if (!resume || !resume.user.isActive || !resume.isPublic) {
+      return res.status(404).json({
+        success: false,
+        message: "Resume not found or not accessible",
+      });
     }
 
     const filePath = path.join(uploadsDir, resume.filename);
     if (!fs.existsSync(filePath)) {
-      return res
-        .status(404)
-        .json({ success: false, message: "File not found" });
+      return res.status(404).json({
+        success: false,
+        message: "File not found",
+      });
     }
 
     res.download(filePath, resume.originalName);
@@ -257,5 +262,91 @@ router.get("/:id/download", async (req, res) => {
   }
 });
 
+// Toggle resume privacy
+router.put("/:id/privacy", authenticateToken, async (req, res) => {
+  try {
+    const { isPublic } = req.body;
+
+    const resume = await Resume.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
+      { isPublic },
+      { new: true }
+    ).populate("user", "name email");
+
+    if (!resume) {
+      return res.status(404).json({
+        success: false,
+        message: "Resume not found",
+      });
+    }
+
+    res.json({ success: true, resume });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Replace resume file
+router.put(
+  "/:id/replace",
+  authenticateToken,
+  upload.single("resume"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "No file uploaded",
+        });
+      }
+
+      const resume = await Resume.findOne({
+        _id: req.params.id,
+        user: req.user._id,
+      });
+
+      if (!resume) {
+        // Clean up uploaded file if resume not found
+        if (req.file) {
+          const filePath = path.join(uploadsDir, req.file.filename);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+        }
+        return res.status(404).json({
+          success: false,
+          message: "Resume not found",
+        });
+      }
+
+      // Delete old file
+      const oldFilePath = path.join(uploadsDir, resume.filename);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
+
+      // Update resume with new file info
+      resume.filename = req.file.filename;
+      resume.originalName = req.file.originalname;
+      await resume.save();
+
+      const updatedResume = await Resume.findById(resume._id).populate(
+        "user",
+        "name email"
+      );
+
+      res.json({ success: true, resume: updatedResume });
+    } catch (error) {
+      // Clean up uploaded file on error
+      if (req.file) {
+        const filePath = path.join(uploadsDir, req.file.filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+      res.status(500).json({ success: false, message: "Server error" });
+    }
+  }
+);
 
 export default router;

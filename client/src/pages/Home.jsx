@@ -134,7 +134,7 @@ function Home() {
         </div>
       </div>
 
-      <div className="bg-blue-600 py-16">
+      <div className=" bg-gradient-to-tr from-blue-400 to-blue-900 py-16">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">
             Ready to organize your Resumes?
@@ -167,7 +167,7 @@ function Home() {
           Developed by
           <a
             className=" ml-1 hover:underline"
-            href="https://soorajrao.in?ref=resumehub"
+            href="https://soorajrao.in?ref=ResumeHub"
           >
             Sooraj Rao
           </a>
