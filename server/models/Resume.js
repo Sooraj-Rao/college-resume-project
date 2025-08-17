@@ -20,6 +20,12 @@ const resumeSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    customUrl: {
+      type: String,
+      unique: true,
+      sparse: true, // Allows null values while maintaining uniqueness
+      trim: true,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -38,11 +44,21 @@ const resumeSchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
-      contacts: {
+      // Removed 'contacts'
+      uniqueVisitors: {
         type: Number,
         default: 0,
       },
+      totalSessions: {
+        type: Number,
+        default: 0,
+      },
+      averageTimeSpent: {
+        type: Number,
+        default: 0,
+      }
     },
+    // Removed 'shareSettings'
   },
   {
     timestamps: true,

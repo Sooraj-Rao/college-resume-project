@@ -1,63 +1,99 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
-import { shortenText } from "./Dashboard";
 
 function ResumeView() {
+  const [searchParams] = useSearchParams();
+
+  const [isDemo, setisDemo] = useState(searchParams.get("ref"));
   const { resumeId } = useParams();
   const [resume, setResume] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  const [sessionId, setSessionId] = useState(null);
+  // Fetch resume data
   useEffect(() => {
-    fetchResume();
-  }, [resumeId]);
+    const fetchResume = async () => {
+      try {
+        const response = await fetch(`/api/resumes/public/${resumeId}`);
+        const data = await response.json();
 
-  const fetchResume = async () => {
-    try {
-      const response = await fetch(`/api/resumes/public/${resumeId}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setResume(data.resume);
-        trackAction("view");
-      } else {
-        setError(data.message);
+        if (data.success) {
+          setResume(data.resume);
+          setSessionId(data.sessionId);
+        } else {
+          setError(data.message);
+        }
+      } catch (error) {
+        setError("Failed to load resume");
       }
-    } catch (error) {
-      setError("Failed to load resume");
-    }
-    setLoading(false);
-  };
+      setLoading(false);
+    };
 
-  const trackAction = async (action) => {
+    fetchResume();
+  }, [resumeId]); // Only re-run if resumeId changes
+
+  // Handle tracking logic
+  useEffect(() => {
+    if (!sessionId) return;
+
+    // Track 'view' event on component mount
+    const isView = localStorage.getItem("view");
+    if (!isView) trackEvent("view");
+
+    // Set up interval to track 'time' event every 15 seconds
+    const intervalId = setInterval(() => {
+      trackEvent("time");
+    }, 15000);
+
+    // Track 'exit' event on tab/browser close
+    const handleBeforeUnload = () => {
+      const data = JSON.stringify({
+        sessionId,
+        event: "exit",
+      });
+      navigator.sendBeacon(`/api/resumes/track/${resumeId}`, data);
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Cleanup on unmount
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      trackEvent("exit");
+    };
+  }, [sessionId, resumeId]); // Re-run only when sessionId or resumeId changes
+
+  const trackEvent = async (eventType) => {
     try {
-      await fetch(`/api/resumes/track/${resumeId}`, {
+      if (isDemo) return;
+      const res = await fetch(`/api/resumes/track/${resumeId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({
+          sessionId,
+          event: eventType,
+        }),
       });
+      if (res.ok) {
+        localStorage.setItem(eventType, Date.now());
+      }
     } catch (error) {
-      console.error("Failed to track action:", error);
+      console.error("Failed to track event:", error);
     }
   };
 
   const handleDownload = () => {
-    trackAction("download");
+    const isDownload = localStorage.getItem("download");
+    if (!isDownload) trackEvent("download");
     window.open(`/api/resumes/public/${resumeId}/download`, "_blank");
-  };
-
-  const handleContact = () => {
-    trackAction("contact");
-    if (resume?.user?.email) {
-      window.location.href = `mailto:${resume.user.email}`;
-    }
   };
 
   if (loading) {
@@ -107,7 +143,7 @@ function ResumeView() {
 
   return (
     <div className="min-h-screen flex justify-center bg-gray-50">
-      <div className=" mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="pdf-viewer">
             <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
@@ -117,16 +153,16 @@ function ResumeView() {
         </div>
       </div>
       <div className="bg-white border-b w-[30%] border-gray-200">
-        <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex items-center space-x-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 text-wrap">
                   {resume.user.name}
                 </h1>
-                <div className="flex items-center space-x-4  text-sm text-gray-600 mt-5">
+                <div className="flex items-center space-x-4 text-sm text-gray-600 mt-5">
                   <a
-                    className=" hover:underline"
+                    className="hover:underline"
                     href={`mailto:${resume.user.email}`}
                   >
                     <span className="flex items-center">
@@ -169,25 +205,6 @@ function ResumeView() {
                 />
               </svg>
               Download Resume
-            </button>
-            <button
-              onClick={handleContact}
-              className="btn-success flex items-center justify-center"
-            >
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-              Contact
             </button>
           </div>
         </div>

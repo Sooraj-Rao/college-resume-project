@@ -8,6 +8,10 @@ function Share() {
   const [selectedResume, setSelectedResume] = useState("");
   const [shareUrl, setShareUrl] = useState("");
   const [loading, setLoading] = useState(true);
+  const [customUrl, setCustomUrl] = useState("");
+  const [referrer, setReferrer] = useState("");
+  // Removed message, requireReferrer states
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     fetchResumes();
@@ -34,9 +38,47 @@ function Share() {
     setSelectedResume(resumeId);
     const resume = resumes.find((r) => r._id === resumeId);
     if (resume) {
-      const url = `${window.location.origin}/r/${resume.shortId}`;
-      setShareUrl(url);
+      setCustomUrl(resume.customUrl || "");
+      setShareUrl("");
     }
+  };
+
+  const generateShareUrl = async () => {
+    if (!selectedResume) {
+      alert("Please select a resume first");
+      return;
+    }
+
+    setGenerating(true);
+
+    try {
+      const response = await fetch("/api/resumes/generate-share-url", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          resumeId: selectedResume,
+          customUrl: customUrl.trim(),
+          referrer: referrer.trim(),
+          // Removed message, requireReferrer from body
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setShareUrl(data.shareUrl);
+      } else {
+        alert("Failed to generate share URL: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error generating share URL:", error);
+      alert("Network error. Please try again.");
+    }
+
+    setGenerating(false);
   };
 
   const copyToClipboard = (text) => {
@@ -72,6 +114,9 @@ function Share() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Share Resume
           </h1>
+          <p className="text-gray-600">
+            Create custom share links with tracking and analytics
+          </p>
         </div>
 
         <div className="space-y-6">
@@ -112,14 +157,96 @@ function Share() {
             {selectedResume && (
               <a
                 href={`/api/resumes/${selectedResume}/download`}
-                className="flex-1   btn-primary text-center text-sm py-2"
+                className="flex-1 btn-primary text-center text-sm py-2"
               >
                 Download
               </a>
             )}
           </div>
 
-          {selectedResume && shareUrl && (
+          {selectedResume && (
+            <div className="card">
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                  <svg
+                    className="w-5 h-5 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"
+                    />
+                  </svg>
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Customize Share Link
+                </h2>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Custom URL (Optional)
+                  </label>
+                  <div className="flex">
+                    <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                      {window.location.origin}/r/
+                    </span>
+                    <input
+                      type="text"
+                      value={customUrl}
+                      onChange={(e) => setCustomUrl(e.target.value)}
+                      className="flex-1 px-4 py-3 border border-gray-200 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="my-custom-url"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Leave empty to use the default short ID
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Referrer/Campaign Name (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={referrer}
+                    onChange={(e) => setReferrer(e.target.value)}
+                    className="input-field"
+                    placeholder="e.g., LinkedIn, Email Campaign, Job Board"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Track where your resume views are coming from
+                  </p>
+                </div>
+
+                {/* Removed Custom Message input */}
+                {/* Removed Require Referrer checkbox */}
+
+                <button
+                  onClick={generateShareUrl}
+                  disabled={generating}
+                  className="btn-primary disabled:opacity-50"
+                >
+                  {generating ? (
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Generating...
+                    </div>
+                  ) : (
+                    "Generate Share Link"
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {shareUrl && (
             <>
               <div className="card">
                 <div className="flex items-center mb-4">
@@ -157,7 +284,17 @@ function Share() {
                     Copy Link
                   </button>
                 </div>
+
+                {referrer && (
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <strong>Tracking:</strong> This link will track views from "{referrer}"
+                      {/* Removed message display */}
+                    </p>
+                  </div>
+                )}
               </div>
+
               <div className="card">
                 <div className="flex items-center mb-4">
                   <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
@@ -221,6 +358,7 @@ function Share() {
                   </a>
                 </div>
               </div>
+
               <div className="card">
                 <div className="flex items-center mb-4">
                   <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
@@ -238,16 +376,26 @@ function Share() {
                       />
                     </svg>
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Analytics
-                  </h2>
+                  <div className="flex-1">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Analytics Preview
+                    </h2>
+                    <p className="text-sm text-gray-600">
+                      View detailed analytics in the Analytics section
+                    </p>
+                  </div>
+                  <a
+                    href="/analytics"
+                    className="btn-secondary text-sm"
+                  >
+                    View Analytics
+                  </a>
                 </div>
 
                 {(() => {
                   const resume = resumes.find((r) => r._id === selectedResume);
                   return resume ? (
                     <div className="space-y-4">
-                      {/* Privacy Status Alert */}
                       {!resume.isPublic && (
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                           <div className="flex items-center">
@@ -272,7 +420,7 @@ function Share() {
                         </div>
                       )}
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6"> {/* Changed to 3 columns */}
                         <div className="text-center p-4 bg-blue-50 rounded-lg">
                           <p className="text-3xl font-bold text-blue-600">
                             {resume.analytics.views}
@@ -289,14 +437,15 @@ function Share() {
                             Downloads
                           </p>
                         </div>
-                        <div className="text-center p-4 bg-purple-50 rounded-lg">
-                          <p className="text-3xl font-bold text-purple-600">
-                            {resume.analytics.contacts}
+                        <div className="text-center p-4 bg-orange-50 rounded-lg">
+                          <p className="text-3xl font-bold text-orange-600">
+                            {resume.analytics.totalSessions || 0}
                           </p>
-                          <p className="text-sm text-purple-700 font-medium">
-                            Contact Clicks
+                          <p className="text-sm text-orange-700 font-medium">
+                            Sessions
                           </p>
                         </div>
+                        {/* Removed Contact Clicks */}
                       </div>
                     </div>
                   ) : null;

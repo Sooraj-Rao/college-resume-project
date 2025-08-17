@@ -14,8 +14,10 @@ import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
 import Share from "./pages/Share";
 import AI from "./pages/AI";
+import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import ResumeView from "./pages/ResumeView";
+import ResumeBuilder from "./pages/ResumeBuilder"; // New import
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import AdminLogin from "./pages/AdminLogin";
@@ -78,7 +80,7 @@ function App() {
       </div>
     );
   }
-  
+
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
@@ -97,13 +99,18 @@ function App() {
 
         {user ? (
           <div className="flex h-screen">
-            <Sidebar user={user} setUser={setUser} />
+            {!window.location.href.includes("builder") && (
+              <Sidebar user={user} setUser={setUser} />
+            )}
             <main className="flex-1 overflow-auto">
               <Routes>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/upload" element={<Upload />} />
                 <Route path="/share" element={<Share />} />
                 <Route path="/ai" element={<AI />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/builder" element={<ResumeBuilder />} />{" "}
+                {/* New route */}
                 <Route
                   path="/settings"
                   element={<Settings user={user} setUser={setUser} />}
@@ -149,7 +156,6 @@ function App() {
                   )
                 }
               />
-
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </>

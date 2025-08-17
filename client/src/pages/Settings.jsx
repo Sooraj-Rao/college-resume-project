@@ -8,6 +8,7 @@ function Settings({ user, setUser }) {
     name: user?.name || "",
     email: user?.email || "",
   });
+  // Removed emailNotifications state
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
@@ -18,6 +19,8 @@ function Settings({ user, setUser }) {
       [e.target.name]: e.target.value,
     });
   };
+
+  // Removed handleNotificationChange function
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +34,10 @@ function Settings({ user, setUser }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          // Removed emailNotifications from body
+        }),
       });
 
       const data = await response.json();
@@ -122,10 +128,14 @@ function Settings({ user, setUser }) {
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
+          <p className="text-gray-600">Manage your account and preferences</p>
         </div>
 
         <div className="space-y-6">
+          {/* Profile Settings */}
           <div className="card">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Information</h2>
+            
             {message && (
               <div
                 className={`mb-6 p-4 rounded-lg ${
@@ -165,9 +175,17 @@ function Settings({ user, setUser }) {
                   className="input-field"
                   required
                 />
+                {user?.isEmailVerified && (
+                  <p className="text-xs text-green-600 mt-1 flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Email verified
+                  </p>
+                )}
               </div>
-              {(user.email !== formData.email ||
-                user.name !== formData.name) && (
+
+              {(user.email !== formData.email || user.name !== formData.name) && (
                 <button
                   type="submit"
                   disabled={loading}
@@ -179,7 +197,11 @@ function Settings({ user, setUser }) {
             </form>
           </div>
 
+          {/* Removed Email Notifications section */}
+
+          {/* Account Actions */}
           <div className="card">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Actions</h2>
             <div className="space-y-4" id="disable">
               <div className="border border-yellow-200 rounded-lg p-6 bg-yellow-50">
                 <div className="flex items-start justify-between">
@@ -199,7 +221,7 @@ function Settings({ user, setUser }) {
                         !user?.isActive ? "Enable" : "Disable"
                       )
                     }
-                    className={`ml-4  text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors duration-200 whitespace-nowrap
+                    className={`ml-4 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors duration-200 whitespace-nowrap
                       ${!user?.isActive ? "bg-gray-600" : "bg-yellow-600"}
                       `}
                   >

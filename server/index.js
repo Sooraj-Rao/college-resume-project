@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth.js";
 import resumeRoutes from "./routes/resumes.js";
 import aiRoutes from "./routes/ai.js";
 import adminRoutes from "./routes/admin.js";
+import analyticsRoutes from "./routes/analytics.js";
 
 dotenv.config();
 
@@ -28,10 +29,12 @@ app.use("/api/auth", authRoutes);
 app.use("/api/resumes", resumeRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/dist/index.html"));
 });
+
 mongoose
   .connect(
     process.env.MONGODB_URI || "mongodb://localhost:27017/resume-organizer"

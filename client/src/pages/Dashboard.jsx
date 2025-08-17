@@ -423,7 +423,7 @@ function Dashboard() {
 
               <div className="flex gap-2">
                 <a
-                  href={`/r/${resume.shortId}`}
+                  href={`/r/${resume.shortId}?ref=demo`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 btn-secondary text-center text-sm py-2"

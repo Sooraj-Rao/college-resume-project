@@ -4,14 +4,17 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 function Register({ setUser }) {
+  const [step, setStep] = useState(1); // 1: Email/Name, 2: OTP Verification
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
+    otp: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -21,19 +24,69 @@ function Register({ setUser }) {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      setLoading(false);
+  const sendOTP = async () => {
+    if (!formData.name || !formData.email) {
+      setError("Name and email are required");
       return;
     }
 
+    setLoading(true);
+    setError("");
+
     try {
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setOtpSent(true);
+        setStep(2);
+      } else {
+        setError(data.message);
+      }
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    }
+
+    setLoading(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (step === 1) {
+      if (formData.password !== formData.confirmPassword) {
+        setError("Passwords do not match");
+        return;
+      }
+      if (formData.password.length < 6) {
+        setError("Password must be at least 6 characters");
+        return;
+      }
+      await sendOTP();
+      return;
+    }
+
+    // Step 2: Verify OTP and complete registration
+    if (!formData.otp) {
+      setError("Please enter the OTP");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -42,6 +95,7 @@ function Register({ setUser }) {
           name: formData.name,
           email: formData.email,
           password: formData.password,
+          otp: formData.otp,
         }),
       });
 
@@ -59,6 +113,10 @@ function Register({ setUser }) {
     }
 
     setLoading(false);
+  };
+
+  const resendOTP = async () => {
+    await sendOTP();
   };
 
   return (
@@ -84,10 +142,13 @@ function Register({ setUser }) {
               </div>
             </div>
             <h2 className="text-3xl font-bold text-gray-900">
-              Create your account
+              {step === 1 ? "Create your account" : "Verify your email"}
             </h2>
             <p className="mt-2 text-gray-600">
-              Start your professional journey
+              {step === 1 
+                ? "Start your professional journey" 
+                : `We've sent a verification code to ${formData.email}`
+              }
             </p>
           </div>
 
@@ -98,83 +159,121 @@ function Register({ setUser }) {
               </div>
             )}
 
-            <div className="space-y-5">
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Full Name
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  className="input-field"
-                  placeholder="Enter your full name"
-                  value={formData.name}
-                  onChange={handleChange}
-                />
-              </div>
+            {step === 1 ? (
+              <div className="space-y-5">
+                <div>
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Full Name
+                  </label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    className="input-field"
+                    placeholder="Enter your full name"
+                    value={formData.name}
+                    onChange={handleChange}
+                  />
+                </div>
 
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  className="input-field"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </div>
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Email address
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    className="input-field"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={handleChange}
+                  />
+                </div>
 
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  className="input-field"
-                  placeholder="Create a password"
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-              </div>
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    required
+                    className="input-field"
+                    placeholder="Create a password"
+                    value={formData.password}
+                    onChange={handleChange}
+                  />
+                </div>
 
-              <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Confirm Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  className="input-field"
-                  placeholder="Confirm your password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                />
+                <div>
+                  <label
+                    htmlFor="confirmPassword"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Confirm Password
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    required
+                    className="input-field"
+                    placeholder="Confirm your password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-5">
+                <div>
+                  <label
+                    htmlFor="otp"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Verification Code
+                  </label>
+                  <input
+                    id="otp"
+                    name="otp"
+                    type="text"
+                    required
+                    maxLength="6"
+                    className="input-field text-center text-2xl tracking-widest"
+                    placeholder="000000"
+                    value={formData.otp}
+                    onChange={handleChange}
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Enter the 6-digit code sent to your email
+                  </p>
+                </div>
+
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={resendOTP}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    disabled={loading}
+                  >
+                    Didn't receive the code? Resend
+                  </button>
+                </div>
+              </div>
+            )}
 
             <button
               type="submit"
@@ -184,12 +283,22 @@ function Register({ setUser }) {
               {loading ? (
                 <div className="flex items-center justify-center">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Creating account...
+                  {step === 1 ? "Sending code..." : "Verifying..."}
                 </div>
               ) : (
-                "Create account"
+                step === 1 ? "Send Verification Code" : "Create Account"
               )}
             </button>
+
+            {step === 2 && (
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="w-full btn-secondary py-3 text-base"
+              >
+                Back to Registration
+              </button>
+            )}
 
             <div className="text-center">
               <p className="text-sm text-gray-600">

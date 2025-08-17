@@ -24,6 +24,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    // Removed emailNotifications
   },
   {
     timestamps: true,
