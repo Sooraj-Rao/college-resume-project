@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import Resume from "../models/Resume.js";
 import { authenticateToken } from "../middleware/auth.js";
 import fs from "fs";
+import pdfParse from "pdf-parse/lib/pdf-parse.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import PDFParser from "pdf2json";
@@ -65,7 +66,7 @@ router.post("/feedback", authenticateToken, async (req, res) => {
 
 export default router;
 
-function parsePdf(buffer) {
+function parsePdf2(buffer) {
   return new Promise((resolve, reject) => {
     const pdfParser = new PDFParser();
     pdfParser.on("pdfParser_dataError", (err) => reject(err.parserError));
@@ -83,9 +84,18 @@ function parsePdf(buffer) {
   });
 }
 
+async function parsePdf(buffer) {
+  try {
+    const data = await pdfParse(buffer);
+    return data.text;
+  } catch (err) {
+    throw new Error("PDF parsing failed: " + err.message);
+  }
+}
+
 function createPrompt(resumeText, userQuery) {
   return `
-You are a resume expert. Below is the extracted text from a real resume. The user is applying for the role: "${userQuery}".
+You are a resume expert. Below is the extracted text from a real resume. This is users query on resume: "${userQuery}".
 
 Resume Text:
 ${resumeText}
@@ -98,7 +108,8 @@ Your task:
   3. Experience to emphasize
   4. Format suggestions
   5. Keywords to include
-  6. Overall recommendations
+  6. Rate the resume out of 100
+  7. Overall recommendations
 - Keep it professional, actionable, and under 250 words.
 Avoid typical AI-style intros and conclusions. Only output clean, structured feedback.
 `;

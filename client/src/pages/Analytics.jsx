@@ -129,20 +129,22 @@ function Analytics() {
       sessions: stat.count,
       avgTime: stat.avgTimeSpent || 0,
     })) || [];
-
   const referrerData =
     resumeAnalytics?.referrerStats?.map((stat) => ({
-      source: stat._id.source === "direct" ? "Direct" : stat._id.source,
-      campaign: stat._id.campaign || "N/A",
+      source: stat._id.campaign || "N/A",
       visits: stat.count,
       avgTime: stat.avgTimeSpent || 0,
     })) || [];
 
-  const timeData =
-    resumeAnalytics?.timeStats?.map((stat) => ({
-      hour: `${stat._id}:00`,
-      visits: stat.count,
-    })) || [];
+  let eventsArr = [];
+  let views = 0;
+
+  selectedSession?.events?.forEach((item) => {
+    if (item?.type == "view") views++;
+    if (views == 1 || item.type == "download") {
+      eventsArr.push(item);
+    }
+  });
 
   return (
     <div className="p-6 lg:p-8">
@@ -439,10 +441,14 @@ function Analytics() {
                   </h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={geoData} layout="horizontal">
+                      <BarChart
+                        data={geoData}
+                        layout="horizontal"
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
-                        <YAxis dataKey="location" type="category" width={100} />
+                        <YAxis type="number" dataKey="sessions" />
+                        <XAxis dataKey="location" type="category" width={100} />
                         <Tooltip />
                         <Bar dataKey="sessions" fill="#3B82F6" />
                       </BarChart>
@@ -488,10 +494,6 @@ function Analytics() {
                         <p className="font-medium text-gray-900">
                           {stat.source}
                         </p>
-                        <p className="text-sm text-gray-500">
-                          {stat.campaign !== "N/A" &&
-                            `Campaign: ${stat.campaign}`}
-                        </p>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-gray-900">
@@ -536,9 +538,7 @@ function Analytics() {
                         <p className="font-semibold text-gray-900">
                           {formatTime(session.timeSpent)}
                         </p>
-                        <p className="text-sm text-gray-500">
-                          {session.events.length} events
-                        </p>
+                        <p className="text-sm text-gray-500"></p>
                         {session.referrer.campaign && (
                           <p className="text-xs text-blue-600">
                             From: {session.referrer.campaign}
@@ -624,9 +624,8 @@ function Analytics() {
                       <p className="text-sm font-medium text-gray-700">
                         Referrer
                       </p>
-                      <p className="text-gray-900">
-                        {selectedSession.referrer.campaign} (
-                        {selectedSession.referrer.source})
+                      <p className="text-blue-900 font-semibold">
+                        {selectedSession.referrer.campaign}
                       </p>
                       {/* Removed customMessage */}
                     </div>
@@ -637,10 +636,9 @@ function Analytics() {
                       Activity Timeline
                     </p>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {selectedSession.events
+                      {eventsArr
                         .filter(
-                          (event) =>
-                            ["view", "download"].includes(event.type) // Filter to only show relevant events
+                          (event) => ["view", "download"].includes(event.type) // Filter to only show relevant events
                         )
                         .map((event, index) => (
                           <div

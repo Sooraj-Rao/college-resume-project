@@ -1,77 +1,93 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Viewer, Worker } from "@react-pdf-viewer/core";
-import "@react-pdf-viewer/core/lib/styles/index.css";
-import "@react-pdf-viewer/default-layout/lib/styles/index.css";
+import { useState, useEffect } from "react"
+import { useParams, useSearchParams } from "react-router-dom"
+import { Viewer, Worker } from "@react-pdf-viewer/core"
+import "@react-pdf-viewer/core/lib/styles/index.css"
+import "@react-pdf-viewer/default-layout/lib/styles/index.css"
 
 function ResumeView() {
-  const [searchParams] = useSearchParams();
+  const [searchParams] = useSearchParams()
 
-  const [isDemo, setisDemo] = useState(searchParams.get("ref"));
-  const { resumeId } = useParams();
-  const [resume, setResume] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [sessionId, setSessionId] = useState(null);
+  const [isDemo, setisDemo] = useState(searchParams.get("ref"))
+  const { resumeId } = useParams()
+  const [resume, setResume] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [sessionId, setSessionId] = useState(null)
+  const [isOwner, setIsOwner] = useState(false) // Track if user is owner
+
   // Fetch resume data
   useEffect(() => {
     const fetchResume = async () => {
       try {
-        const response = await fetch(`/api/resumes/public/${resumeId}`);
-        const data = await response.json();
+        const headers = {}
+        const token = localStorage.getItem("token")
+        if (token) {
+          headers.Authorization = `Bearer ${token}`
+        }
+
+        const response = await fetch(`/api/resumes/public/${resumeId}`, { headers })
+        const data = await response.json()
 
         if (data.success) {
-          setResume(data.resume);
-          setSessionId(data.sessionId);
+          setResume(data.resume)
+          setSessionId(data.sessionId)
+          setIsOwner(data.isOwner || false) // Set owner status
         } else {
-          setError(data.message);
+          setError(data.message)
         }
       } catch (error) {
-        setError("Failed to load resume");
+        setError("Failed to load resume")
       }
-      setLoading(false);
-    };
+      setLoading(false)
+    }
 
-    fetchResume();
-  }, [resumeId]); // Only re-run if resumeId changes
+    fetchResume()
+  }, [resumeId]) // Only re-run if resumeId changes
 
   // Handle tracking logic
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || isOwner) return
 
-    // Track 'view' event on component mount
-    const isView = localStorage.getItem("view");
-    if (!isView) trackEvent("view");
+    const sessionKey = `session_${sessionId}`
+    const sessionData = JSON.parse(localStorage.getItem(sessionKey) || "{}")
+
+    // Track 'view' event on component mount only if not already tracked for this session
+    if (!sessionData.viewTracked) {
+      trackEvent("view")
+      sessionData.viewTracked = true
+      localStorage.setItem(sessionKey, JSON.stringify(sessionData))
+    }
 
     // Set up interval to track 'time' event every 15 seconds
     const intervalId = setInterval(() => {
-      trackEvent("time");
-    }, 15000);
+      trackEvent("time")
+    }, 15000)
 
     // Track 'exit' event on tab/browser close
     const handleBeforeUnload = () => {
       const data = JSON.stringify({
         sessionId,
         event: "exit",
-      });
-      navigator.sendBeacon(`/api/resumes/track/${resumeId}`, data);
-    };
+      })
+      navigator.sendBeacon(`/api/resumes/track/${resumeId}`, data)
+    }
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload)
 
     // Cleanup on unmount
     return () => {
-      clearInterval(intervalId);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      trackEvent("exit");
-    };
-  }, [sessionId, resumeId]); // Re-run only when sessionId or resumeId changes
+      clearInterval(intervalId)
+      window.removeEventListener("beforeunload", handleBeforeUnload)
+      trackEvent("exit")
+    }
+  }, [sessionId, resumeId, isOwner]) // Added isOwner dependency
 
   const trackEvent = async (eventType) => {
     try {
-      if (isDemo) return;
+      if (isDemo=='demo' || isOwner || !sessionId) return
+
       const res = await fetch(`/api/resumes/track/${resumeId}`, {
         method: "POST",
         headers: {
@@ -81,20 +97,31 @@ function ResumeView() {
           sessionId,
           event: eventType,
         }),
-      });
-      if (res.ok) {
-        localStorage.setItem(eventType, Date.now());
+      })
+
+      if (res.ok && eventType === "download") {
+        const sessionKey = `session_${sessionId}`
+        const sessionData = JSON.parse(localStorage.getItem(sessionKey) || "{}")
+        sessionData.downloadTracked = true
+        localStorage.setItem(sessionKey, JSON.stringify(sessionData))
       }
     } catch (error) {
-      console.error("Failed to track event:", error);
+      console.error("Failed to track event:", error)
     }
-  };
+  }
 
   const handleDownload = () => {
-    const isDownload = localStorage.getItem("download");
-    if (!isDownload) trackEvent("download");
-    window.open(`/api/resumes/public/${resumeId}/download`, "_blank");
-  };
+    if (!isOwner && sessionId) {
+      const sessionKey = `session_${sessionId}`
+      const sessionData = JSON.parse(localStorage.getItem(sessionKey) || "{}")
+
+      if (!sessionData.downloadTracked) {
+        trackEvent("download")
+      }
+    }
+
+    window.open(`/api/resumes/public/${resumeId}/download`, "_blank")
+  }
 
   if (loading) {
     return (
@@ -104,7 +131,7 @@ function ResumeView() {
           <p className="text-gray-600">Loading resume...</p>
         </div>
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -112,12 +139,7 @@ function ResumeView() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <svg
-              className="w-8 h-8 text-red-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -126,19 +148,16 @@ function ResumeView() {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Resume Not Found
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Resume Not Found</h2>
           <p className="text-gray-600 mb-6">
-            The resume you're looking for might have been removed or is no
-            longer available.
+            The resume you're looking for might have been removed or is no longer available.
           </p>
           <a href="/" className="btn-primary">
             Go to Homepage
           </a>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -157,21 +176,11 @@ function ResumeView() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex items-center space-x-4">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 text-wrap">
-                  {resume.user.name}
-                </h1>
+                <h1 className="text-2xl font-bold text-gray-900 text-wrap">{resume.user.name}</h1>
                 <div className="flex items-center space-x-4 text-sm text-gray-600 mt-5">
-                  <a
-                    className="hover:underline"
-                    href={`mailto:${resume.user.email}`}
-                  >
+                  <a className="hover:underline" href={`mailto:${resume.user.email}`}>
                     <span className="flex items-center">
-                      <svg
-                        className="w-4 h-4 mr-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -187,16 +196,8 @@ function ResumeView() {
             </div>
           </div>
           <div className="flex flex-col mt-10 gap-3">
-            <button
-              onClick={handleDownload}
-              className="btn-primary flex items-center justify-center"
-            >
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+            <button onClick={handleDownload} className="btn-primary flex items-center justify-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -210,7 +211,7 @@ function ResumeView() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
-export default ResumeView;
+export default ResumeView

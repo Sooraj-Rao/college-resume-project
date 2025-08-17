@@ -62,7 +62,6 @@ function Share() {
           resumeId: selectedResume,
           customUrl: customUrl.trim(),
           referrer: referrer.trim(),
-          // Removed message, requireReferrer from body
         }),
       });
 
